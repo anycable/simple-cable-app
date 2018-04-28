@@ -6,6 +6,6 @@ module MetricsFormatter
       parts << "sample##{key}=#{value}"
     end
 
-    "source=ANYCABLE #{parts.join(' ')}"
+    parts.join(' ')
   end
 end
