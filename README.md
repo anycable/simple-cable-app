@@ -16,7 +16,11 @@ heroku buildpacks:add https://github.com/anycable/heroku-anycable-go
 heroku buildpacks:add heroku/ruby
 
 heroku config:set ANYCABLE_DEPLOYMENT=true
-heroku config:set HEROKU_ANYCABLE_GO_VERSION=0.6.0-preview5
+
+# (optionally) Use anycable-go with mruby support
+# and log stats in Librato format
+heroku config:set HEROKU_ANYCABLE_GO_VERSION=0.6.0-mrb
+heroku config:set ANYCABLE_METRICS_LOG_FORMATTER=etc/anycable_librato_logger.rb
 
 git push heroku master
 ```
