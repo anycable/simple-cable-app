@@ -1,0 +1,2 @@
+web: bundle exec puma -e production -w 2
+anycable: ./anycable

@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+ENV['USE_ANYCABLE'] = '1'
+ENV['RAILS_ENV'] ||= 'production'
+
+require_relative "./app"
+require "anycable-rails"
+
+Rails.application.initialize!
+
+unless ENV['SKIP_ANYCABLE_GO']
+  go_thread = Thread.new do
+    Process.wait Process.spawn("anycable-go")
+    raise "Anycable-Go failed!"
+  end
+
+  go_thread.abort_on_exception = true
+end
+
+Anycable::Server.start
