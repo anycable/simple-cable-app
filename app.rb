@@ -37,7 +37,6 @@ module ApplicationCable
     identified_by :id
 
     def connect
-      p "Current thread: #{Thread.current.object_id}"
       self.id = SecureRandom.uuid
     end
   end
