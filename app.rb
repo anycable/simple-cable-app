@@ -47,7 +47,7 @@ module ApplicationCable
   end
 end
 
-ActionCable.server.config.logger = Rails.logger
+Rails.logger = ActionCable.server.config.logger = Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
 ActionCable.server.config.cable = { "adapter" => "redis" }
 ActionCable.server.config.connection_class = -> { ApplicationCable::Connection }
 ActionCable.server.config.disable_request_forgery_protection = true
