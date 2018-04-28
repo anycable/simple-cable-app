@@ -1,0 +1,6 @@
+- client:
+    multiplier: ":scale"
+    protocol: "action_cable"
+    actions:
+      - subscribe:
+          channel: "DemoChannel"

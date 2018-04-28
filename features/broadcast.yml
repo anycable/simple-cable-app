@@ -1,0 +1,28 @@
+- client:
+    multiplier: ":scale"
+    protocol: "action_cable"
+    name: "publishers"
+    actions:
+      - subscribe:
+          channel: "BenchmarkChannel"
+      - wait_all
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          multiplier: 3
+          data:
+            message: "Hello!"
+- client:
+    multiplier: ":scale * 2"
+    name: "listeners"
+    protocol: "action_cable"
+    actions:
+      - subscribe:
+          channel: "BenchmarkChannel"
+      - wait_all
+      - receive:
+          multiplier: ":scale + :scale"
+          channel: "BenchmarkChannel"
+          data:
+            message: "Hello!"
+            action: "broadcast"
