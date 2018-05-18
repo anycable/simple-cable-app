@@ -74,3 +74,41 @@ class BenchmarkChannel < ApplicationCable::Channel
     transmit data
   end
 end
+
+if ENV["OBJECT_TRACE"]
+  require_relative "./memprof"
+
+  WARMUP_COUNT = 200
+
+  TRACE_INTERVAL = (ENV['TRACE'] || 10).to_i
+
+  COUNTER = Concurrent::AtomicFixnum.new(0)
+
+  ACTIONCABLE_SOURCES = /\/(actioncable|active_support|action_dispatch|concurrent)/
+  WEBSOCKET_SOURCES = /\/websocket\-/
+
+  def start_trace
+    puts "Start allocation tracing\n"
+    Memprof.start
+  end
+
+  def print_trace
+    puts "Print allocation tracing\nTotal clients connected after warmup: #{COUNTER.value - WARMUP_COUNT}"
+
+    Memprof.report(mapping: { action_cable: ACTIONCABLE_SOURCES, websocket: WEBSOCKET_SOURCES, other: /.*/ }, ignore: [Thread])
+  end
+
+  ActionCable::Connection::Base.prepend(Module.new do
+    def respond_to_successful_request
+      res = super
+      COUNTER.increment
+      start_trace if COUNTER.value == WARMUP_COUNT
+      val = COUNTER.value
+      if val > WARMUP_COUNT && ((val - WARMUP_COUNT) % TRACE_INTERVAL) == 0
+        print_trace
+        start_trace
+      end
+      res
+    end
+  end)
+end

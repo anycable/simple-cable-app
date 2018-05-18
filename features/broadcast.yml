@@ -6,12 +6,27 @@
       - subscribe:
           channel: "BenchmarkChannel"
       - wait_all
+      - sleep:
+          time: 10
+          shift: 5
       - perform:
           channel: "BenchmarkChannel"
           action: "broadcast"
           multiplier: 3
           data:
             message: "Hello!"
+      - receive_all:
+          messages:
+            - data:
+                action: "broadcast"
+                message: "Hello!"
+              multiplier: "3 * :scale"
+              channel: "BenchmarkChannel"
+            - data:
+                message: "Hello!"
+                action: "broadcastResult"
+              multiplier: 3
+              channel: "BenchmarkChannel"          
 - client:
     multiplier: ":scale * 2"
     name: "listeners"
@@ -20,8 +35,11 @@
       - subscribe:
           channel: "BenchmarkChannel"
       - wait_all
+      - sleep:
+          time: 10
+          shift: 5
       - receive:
-          multiplier: ":scale + :scale"
+          multiplier: "3 * :scale"
           channel: "BenchmarkChannel"
           data:
             message: "Hello!"

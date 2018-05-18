@@ -1,0 +1,7 @@
+- client:
+    multiplier: ":scale"
+    protocol: "action_cable"
+    actions:
+      - wait_all
+      - sleep:
+          time: 1

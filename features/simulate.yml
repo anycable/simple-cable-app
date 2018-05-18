@@ -1,0 +1,99 @@
+- client:
+    multiplier: ":scale"
+    protocol: "action_cable"
+    actions:
+      - subscribe:
+          channel: "BenchmarkChannel"
+      - wait_all
+      - sleep:
+          time: 5
+          shift: 2
+          debug: true
+      - debug:
+          message: "Perform #1"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            message: "Hello!"
+      - receive_all:
+          messages:
+            - data:
+                action: "broadcast"
+                message: "Hello!"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                message: "Hello!"
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 3
+          shift: 2
+          debug: true
+      - debug:
+          message: "Perform #2"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            message: "Hello!"
+      - receive_all:
+          messages:
+            - data:
+                action: "broadcast"
+                message: "Hello!"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                message: "Hello!"
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 4
+          shift: 1
+          debug: true
+      - debug:
+          message: "Perform #3"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            message: "Hello!"
+      - receive_all:
+          messages:
+            - data:
+                action: "broadcast"
+                message: "Hello!"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                message: "Hello!"
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 3
+          shift: 1
+          debug: true
+      - debug:
+          message: "Perform #4"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            message: "Hello!"
+      - receive_all:
+          messages:
+            - data:
+                action: "broadcast"
+                message: "Hello!"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                message: "Hello!"
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"

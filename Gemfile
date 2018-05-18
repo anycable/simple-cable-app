@@ -8,3 +8,5 @@ gem "puma"
 gem "redis"
 
 gem "anycable-rails", "~> 0.5.0"
+
+gem "pry-byebug"
