@@ -4,4 +4,4 @@
     actions:
       - wait_all
       - sleep:
-          time: 1
+          time: 10
