@@ -1,0 +1,145 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+%%! -sname rpc_bench -debug verbose -config bench.config
+
+-mode(compile).
+
+-define(DF(X, Y), io:format(X ++ "~n", Y)).
+-define(D(X), io:format(X ++ "~n")).
+
+-include("../../erlycable/include/anycable_pb.hrl").
+
+main([Host, Port, Count, SecondsStr]) ->
+  {ok, Libs} = file:list_dir("../../erlycable/_build/default/lib"),
+
+  [code:add_path("../../erlycable/_build/default/lib/" ++ Lib ++ "/ebin") || Lib <- Libs],
+
+  ulitos_app:ensure_started(erlgrpc),
+
+  Seconds = list_to_integer(SecondsStr),
+
+  Stats = spawn_link(fun() -> init_stats(Seconds) end),
+
+  start_clients(#{
+    host => Host, port => Port,
+    count => list_to_integer(Count),
+    stats => Stats,
+    seconds => Seconds
+  });
+
+main(_) ->
+    usage().
+
+usage() ->
+    ?D("usage: rpc_bench <host> <port> <count> <seconds>\n"),
+    halt(1).
+
+start_clients(Config) ->
+  start_clients(Config, 0, #{}).
+
+start_clients(#{ count := Count } = Config, Number, Clients) when Number < Count ->
+  ?DF("Starting client ~p", [Number+1]),
+  {Pid, _} = spawn_monitor(fun() -> init_client(Config) end),
+  receive
+    {'EXIT', _Pid, Reason} ->
+      ?DF("Failed to start client: ~p", [Reason]),
+      halt(1)
+  after
+    500 ->
+      start_clients(Config, Number + 1, maps:put(Pid, alive, Clients))
+  end;
+
+start_clients(#{ count := Count } = Config, Count, Clients) ->
+  ?D("All started"),
+  run_benchmarks(Config, Count, Clients).
+
+run_benchmarks(#{ seconds := Seconds, stats := Stats } = Config, Count, Clients) ->
+  ?DF("Running benchmarks for ~ps", [Seconds]),
+  timer:sleep(Seconds * 1000),
+  
+  ?D("Stopping clients..."),
+  [Pid ! done || {Pid, _} <- maps:to_list(Clients)],
+
+  flush_exits(),
+
+  Stats ! {done, self()},
+
+  receive
+    ok -> ?D("Done!")
+  after
+    1000 ->
+      ?D("Timeouted wating for stats"),
+      halt(1)
+  end.
+
+flush_exits() ->
+  receive
+    {'DOWN', _Ref, process, Pid, normal} ->
+      ?DF("Client done: ~p", [Pid]);
+    {'DOWN', _Ref, process, Pid, _Reason} ->
+      ?DF("Dead client ~p", [_Reason]);
+    Else ->
+      ?DF("Unknown message: ~p", [Else]),
+      halt(1)
+  end.
+
+init_stats(Seconds) ->
+  loop_stats(Seconds, 0, 0, 0).
+
+loop_stats(Seconds, Count, Time, Errors) ->
+  receive
+    {init, Pid} -> ?DF("Clients initialized: ~p", [Pid]), loop_stats(Seconds, Count, Time, Errors);
+    {call, _Pid, MicroSeconds} -> loop_stats(Seconds, Count + 1, Time + MicroSeconds, Errors);
+    {error, _Pid, MicroSeconds} -> loop_stats(Seconds, Count + 1, Time + MicroSeconds, Errors + 1);
+    {done, From} ->
+        ?DF("Results: rps=~p count=~p errors=~p time=~p avg=~pus", [Count / Seconds, Count, Errors, Time, Time / Count]),
+        From ! ok
+  end.
+
+init_client(#{ host := Host, port := Port, stats := Stats } = Config) ->
+  {ok, Client} = erlgrpc:dial(Config),
+
+  %% Connect and subscribe to BenchmarkChannel
+  ConnectMsg = anycable_pb:encode_msg(#'ConnectionRequest'{path = "/cable"}),  
+  {ok, ConnectResult} = erlgrpc:invoke(Client, <<"/anycable.RPC/Connect">>, ConnectMsg),
+
+  #'ConnectionResponse'{identifiers = Identifiers} =
+    anycable_pb:decode_msg(ConnectResult, 'ConnectionResponse'),
+
+  SubscribeMsg = anycable_pb:encode_msg(#'CommandMessage'{
+    command = <<"subscribe">>,
+    identifier = <<"{\"channel\":\"BenchmarkChannel\"}">>,
+    connection_identifiers = Identifiers
+  }),
+
+  {ok, _} = erlgrpc:invoke(Client, <<"/anycable.RPC/Command">>, SubscribeMsg),
+
+  Stats ! {init, self()},
+
+  Msg = anycable_pb:encode_msg(#'CommandMessage'{
+    command = <<"perform">>,
+    identifier = <<"{\"channel\":\"BenchmarkChannel\"}">>,
+    data = <<"{\"action\":\"echo\",\"text\":\"hello\"}">>,
+    connection_identifiers = Identifiers
+  }),
+
+  run_bench(Client, Msg, Stats).
+
+run_bench(Client, Message, Stats) ->
+  self() ! run_bench,
+
+  receive
+    done ->
+      ?DF("I'm stopping ~p", [self()]),
+      erlgrpc:close(Client),
+      exit(normal);
+    run_bench ->
+      {Time, Result} = timer:tc(erlgrpc, invoke, [Client, <<"/anycable.RPC/Command">>, Message]),
+      case Result of
+        {ok, _} ->
+          Stats ! {call, self(), Time};
+        {error, _} ->
+          Stats ! {error, self(), Time}
+      end,
+      run_bench(Client, Message, Stats)
+  end.

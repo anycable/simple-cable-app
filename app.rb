@@ -64,7 +64,6 @@ class BenchmarkChannel < ApplicationCable::Channel
   end
 
   def echo(data)
-    sleep 1
     transmit data
   end
 

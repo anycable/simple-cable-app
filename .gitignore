@@ -38,3 +38,5 @@ Gemfile.local
 tmp/
 coverage/
 .env
+
+*.dump
