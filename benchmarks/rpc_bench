@@ -7,6 +7,9 @@
 -define(DF(X, Y), io:format(X ++ "~n", Y)).
 -define(D(X), io:format(X ++ "~n")).
 
+-define(CHANNEL, <<"{\"channel\":\"BenchmarkChannel\"}">>).
+-define(MESSAGE, <<"{\"action\":\"echo\",\"text\":\"hello\"}">>).
+
 -include("../../erlycable/include/anycable_pb.hrl").
 
 main([Host, Port, Count, SecondsStr]) ->
@@ -20,10 +23,9 @@ main([Host, Port, Count, SecondsStr]) ->
 
   Stats = spawn_link(fun() -> init_stats(Seconds) end),
 
-  {ok, Client} = erlgrpc:dial(#{ host => Host, port => Port }),
+  erlycable:start(),
 
   start_clients(#{
-    client => Client,
     count => list_to_integer(Count),
     stats => Stats,
     seconds => Seconds
@@ -98,48 +100,30 @@ loop_stats(Seconds, Count, Time, Errors) ->
         From ! ok
   end.
 
-init_client(#{ client := Client, stats := Stats } = Config) ->
+init_client(#{ stats := Stats } = Config) ->
   %% Connect and subscribe to BenchmarkChannel
-  ConnectMsg = anycable_pb:encode_msg(#'ConnectionRequest'{path = "/cable"}),  
-  {ok, ConnectResult} = erlgrpc:invoke(Client, <<"/anycable.RPC/Connect">>, ConnectMsg),
+  {ok,  #'ConnectionResponse'{identifiers = Identifiers}} = erlycable_rpc:connect("/cable", []),
 
-  #'ConnectionResponse'{identifiers = Identifiers} =
-    anycable_pb:decode_msg(ConnectResult, 'ConnectionResponse'),
-
-  SubscribeMsg = anycable_pb:encode_msg(#'CommandMessage'{
-    command = <<"subscribe">>,
-    identifier = <<"{\"channel\":\"BenchmarkChannel\"}">>,
-    connection_identifiers = Identifiers
-  }),
-
-  {ok, _} = erlgrpc:invoke(Client, <<"/anycable.RPC/Command">>, SubscribeMsg),
+  {ok, _} = erlycable_rpc:subscribe(Identifiers, ?CHANNEL, []),
 
   Stats ! {init, self()},
 
-  Msg = anycable_pb:encode_msg(#'CommandMessage'{
-    command = <<"perform">>,
-    identifier = <<"{\"channel\":\"BenchmarkChannel\"}">>,
-    data = <<"{\"action\":\"echo\",\"text\":\"hello\"}">>,
-    connection_identifiers = Identifiers
-  }),
+  run_bench(Identifiers, Stats).
 
-  run_bench(Client, Msg, Stats).
-
-run_bench(Client, Message, Stats) ->
+run_bench(Identifiers, Stats) ->
   self() ! run_bench,
 
   receive
     done ->
-      ?DF("I'm stopping ~p", [self()]),
       ulitos:flush_box(),
       exit(normal);
     run_bench ->
-      {Time, Result} = timer:tc(erlgrpc, invoke, [Client, <<"/anycable.RPC/Command">>, Message]),
+      {Time, Result} = timer:tc(erlycable_rpc, perform, [Identifiers, ?CHANNEL, ?MESSAGE]),
       case Result of
         {ok, _} ->
           Stats ! {call, self(), Time};
         {error, _} ->
           Stats ! {error, self(), Time}
       end,
-      run_bench(Client, Message, Stats)
+      run_bench(Identifiers, Stats)
   end.
