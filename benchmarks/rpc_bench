@@ -2,7 +2,7 @@
 %% -*- erlang -*-
 %%! -sname rpc_bench -debug verbose -config bench.config
 
--mode(compile).
+-mode(native).
 
 -define(DF(X, Y), io:format(X ++ "~n", Y)).
 -define(D(X), io:format(X ++ "~n")).
@@ -20,8 +20,10 @@ main([Host, Port, Count, SecondsStr]) ->
 
   Stats = spawn_link(fun() -> init_stats(Seconds) end),
 
+  {ok, Client} = erlgrpc:dial(#{ host => Host, port => Port }),
+
   start_clients(#{
-    host => Host, port => Port,
+    client => Client,
     count => list_to_integer(Count),
     stats => Stats,
     seconds => Seconds
@@ -38,14 +40,14 @@ start_clients(Config) ->
   start_clients(Config, 0, #{}).
 
 start_clients(#{ count := Count } = Config, Number, Clients) when Number < Count ->
-  ?DF("Starting client ~p", [Number+1]),
+  % ?DF("Starting client ~p", [Number+1]),
   {Pid, _} = spawn_monitor(fun() -> init_client(Config) end),
   receive
     {'EXIT', _Pid, Reason} ->
       ?DF("Failed to start client: ~p", [Reason]),
       halt(1)
   after
-    500 ->
+    100 ->
       start_clients(Config, Number + 1, maps:put(Pid, alive, Clients))
   end;
 
@@ -54,7 +56,7 @@ start_clients(#{ count := Count } = Config, Count, Clients) ->
   run_benchmarks(Config, Count, Clients).
 
 run_benchmarks(#{ seconds := Seconds, stats := Stats } = Config, Count, Clients) ->
-  ?DF("Running benchmarks for ~ps", [Seconds]),
+  ?DF("Running ~p benchmark clients for ~ps", [Count, Seconds]),
   timer:sleep(Seconds * 1000),
   
   ?D("Stopping clients..."),
@@ -88,7 +90,7 @@ init_stats(Seconds) ->
 
 loop_stats(Seconds, Count, Time, Errors) ->
   receive
-    {init, Pid} -> ?DF("Clients initialized: ~p", [Pid]), loop_stats(Seconds, Count, Time, Errors);
+    {init, Pid} -> loop_stats(Seconds, Count, Time, Errors);
     {call, _Pid, MicroSeconds} -> loop_stats(Seconds, Count + 1, Time + MicroSeconds, Errors);
     {error, _Pid, MicroSeconds} -> loop_stats(Seconds, Count + 1, Time + MicroSeconds, Errors + 1);
     {done, From} ->
@@ -96,9 +98,7 @@ loop_stats(Seconds, Count, Time, Errors) ->
         From ! ok
   end.
 
-init_client(#{ host := Host, port := Port, stats := Stats } = Config) ->
-  {ok, Client} = erlgrpc:dial(Config),
-
+init_client(#{ client := Client, stats := Stats } = Config) ->
   %% Connect and subscribe to BenchmarkChannel
   ConnectMsg = anycable_pb:encode_msg(#'ConnectionRequest'{path = "/cable"}),  
   {ok, ConnectResult} = erlgrpc:invoke(Client, <<"/anycable.RPC/Connect">>, ConnectMsg),
@@ -131,7 +131,7 @@ run_bench(Client, Message, Stats) ->
   receive
     done ->
       ?DF("I'm stopping ~p", [self()]),
-      erlgrpc:close(Client),
+      ulitos:flush_box(),
       exit(normal);
     run_bench ->
       {Time, Result} = timer:tc(erlgrpc, invoke, [Client, <<"/anycable.RPC/Command">>, Message]),
