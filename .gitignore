@@ -40,3 +40,5 @@ coverage/
 .env
 
 *.dump
+heap.json
+heap.png

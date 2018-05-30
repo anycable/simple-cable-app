@@ -32,12 +32,28 @@ class TestApp < Rails::Application
   end
 end
 
+if ENV['DUMP']
+  require "objspace"
+
+  ObjectSpace.trace_object_allocations_start
+end
+
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
     identified_by :id
 
     def connect
       self.id = SecureRandom.uuid
+
+      if request.params.key?("dump")
+        p "Generating heap dump..."
+        GC.start;GC.start;GC.start
+
+        File.open('heap.json', 'w') { |f|
+          ObjectSpace.dump_all(output: f)
+        }
+        p "Done!"
+      end
     end
   end
 end
@@ -85,6 +101,7 @@ if ENV["OBJECT_TRACE"]
 
   ACTIONCABLE_SOURCES = /\/(actioncable|active_support|action_dispatch|concurrent)/
   WEBSOCKET_SOURCES = /\/websocket\-/
+  NIO4R_SOURCES = /\/nio4r/
 
   def start_trace
     puts "Start allocation tracing\n"
@@ -93,8 +110,7 @@ if ENV["OBJECT_TRACE"]
 
   def print_trace
     puts "Print allocation tracing\nTotal clients connected after warmup: #{COUNTER.value - WARMUP_COUNT}"
-
-    Memprof.report(mapping: { action_cable: ACTIONCABLE_SOURCES, websocket: WEBSOCKET_SOURCES, other: /.*/ }, ignore: [Thread])
+    Memprof.report(mapping: { nio4r: NIO4R_SOURCES, action_cable: ACTIONCABLE_SOURCES, websocket: WEBSOCKET_SOURCES, other: /.*/ }, ignore: [Thread])
   end
 
   ActionCable::Connection::Base.prepend(Module.new do
@@ -105,7 +121,7 @@ if ENV["OBJECT_TRACE"]
       val = COUNTER.value
       if val > WARMUP_COUNT && ((val - WARMUP_COUNT) % TRACE_INTERVAL) == 0
         print_trace
-        start_trace
+        COUNTER.value = 0
       end
       res
     end

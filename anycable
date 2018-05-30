@@ -44,7 +44,7 @@ if ENV["OBJECT_TRACE"]
       val = COUNTER.value
       if val > WARMUP_COUNT && ((val - WARMUP_COUNT) % TRACE_INTERVAL) == 0
         print_trace
-        start_trace
+        COUNTER.value = 0
       end
       response
     end

@@ -12,12 +12,16 @@ module Memprof
   end
 
   def start
-    trace_object_allocations_clear
     trace_object_allocations_start
+
+    puts "Current generation: #{ GC.count }"
   end
 
   def report(mapping:, ignore: [])
     gc_start
+
+    puts "Total heap pages: #{ GC.stat[:heap_allocated_pages]}"
+    puts "Current generation: #{ GC.count }"
 
     print_rss
     results = Hash.new { |h, k| h[k] = { type: k, count: 0, memsize: 0 } }
@@ -25,7 +29,9 @@ module Memprof
     hit = 0
     match = 0
     miss = 0
+    long_strings = 0
 
+    trace_object_allocations_stop
     each_object do |obj|
       next if ignore.detect { |ignored_class| obj.is_a?(ignored_class) }
 
@@ -35,6 +41,14 @@ module Memprof
       if path.nil?
         miss += 1
         next
+      end
+
+      if obj.is_a?(::String) && obj.size > 23
+        long_strings += 1
+        if ENV["MEMPROF_VERBOSE"]
+          p "STRING: #{obj}"
+          debug("string", obj)
+        end
       end
 
       hit += 1
@@ -52,13 +66,10 @@ module Memprof
       end
     end
 
-    trace_object_allocations_clear
-
-    puts "TOTAL: #{miss + hit}\nMISS: #{miss}\nHIT:#{hit}\nMATCH:#{match}"
-
+    puts "TOTAL: #{miss + hit}\nMISS: #{miss}\nHIT:#{hit}\nMATCH:#{match}\n23+ strings: #{long_strings}"
 
     puts format("%15s\t\t%15s\t\t%15s\n", *%w(type count memsize))
-    
+
     total_count = 0
     total_memsize = 0
 
@@ -71,7 +82,7 @@ module Memprof
 
     puts format("\n%15s\t\t%15d\t\t%15d\n", "__total__", total_count, total_memsize)
 
-    nil
+    trace_object_allocations_clear
   end
 
   def debug(type, obj)

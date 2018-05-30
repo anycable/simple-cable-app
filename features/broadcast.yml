@@ -6,9 +6,6 @@
       - subscribe:
           channel: "BenchmarkChannel"
       - wait_all
-      - sleep:
-          time: 10
-          shift: 5
       - perform:
           channel: "BenchmarkChannel"
           action: "broadcast"
@@ -35,9 +32,6 @@
       - subscribe:
           channel: "BenchmarkChannel"
       - wait_all
-      - sleep:
-          time: 10
-          shift: 5
       - receive:
           multiplier: "3 * :scale"
           channel: "BenchmarkChannel"
