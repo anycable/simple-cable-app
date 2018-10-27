@@ -1,6 +1,8 @@
 # Simple Cable
 
-Minimal ActionCable/AnyCable application which could be deployed on Heroku.
+Minimal ActionCable/AnyCable application which could be deployed on Heroku...
+
+**UPD (2018-10):** ...And also a playground for performance experiments.
 
 ## Deployment
 
@@ -34,6 +36,13 @@ wsdirector features/broadcast.yml wss://simple-cable-app.herokuapp.com/cable -s 
 ```
 
 See `features/` folder for available scenarios.
+
+## Application Servers
+
+This app could be served by different Ruby app servers:
+- [Puma](https://github.com/puma/puma): `bundle exec puma -e production -w 4 -p 8080` (assuming you have 4 cores)
+- [Falcon](https://github.com/socketry/falcon): `RAILS_ENV=production bundle exec falcon serve -b http://0.0.0.0:8080`
+- [Iodine](https://github.com/boazsegev/iodine): `RAILS_ENV=production bundle exec falcon serve -b http://0.0.0.0:8080` ([this PR's](https://github.com/rails/rails/pull/33295) code is required)
 
 ## Heap capturing
 
