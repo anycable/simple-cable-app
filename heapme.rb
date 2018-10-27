@@ -14,9 +14,7 @@ def page_address_from_object_address object_address
   object_address & ~HEAP_PAGE_ALIGN_MASK
 end
 
-p page_address_from_object_address(0x7fcc6c8367e8)
-p page_address_from_object_address(0x7fcc6c836838)
-p page_address_from_object_address(0x7fcc6c847b88)
+p "HEAP PAGE SIZE LIMIT: #{HEAP_PAGE_OBJ_LIMIT}"
 
 class Page < Struct.new :address, :obj_start_address, :obj_count
   def initialize address, obj_start_address, obj_count
@@ -65,15 +63,6 @@ def page_info page_address
   Page.new page_address, obj_start_address, limit
 end
 
-page_address = page_address_from_object_address(0x7fcc6c8367e8)
-p page_info(page_address)
-
-page_address = page_address_from_object_address(0x7fcc6c836838)
-p page_info(page_address)
-
-page_address = page_address_from_object_address(0x7fcc6c847b88)
-p page_info(page_address)
-
 require 'json'
 
 # Keep track of pages
@@ -105,6 +94,10 @@ require 'chunky_png'
 
 pages = pages.values
 
+p "TOTAl PAGES: #{pages.size}"
+
+live_slots = 0
+
 # We're using 2x2 pixel squares to represent objects, so the height of
 # the PNG will be 2x the max number of objects, and the width will be 2x the
 # number of pages
@@ -118,6 +111,7 @@ pages.each_with_index do |page, i|
 
   page.each_slot.with_index do |slot, j|
     if slot == :full
+      live_slots += 1
       j = j * 2
       png[i, j] = ChunkyPNG::Color.rgba(255, 0, 0, 255)
       png[i + 1, j] = ChunkyPNG::Color.rgba(255, 0, 0, 255)
@@ -127,4 +121,11 @@ pages.each_with_index do |page, i|
   end
 end
 
-png.save('heap.png', :interlace => true)
+total_slots = pages.size * HEAP_PAGE_OBJ_LIMIT
+empty_slots =  total_slots - live_slots
+
+p "TOTAL LIVE SLOTS: #{live_slots}"
+p "TOTAL EMPTY SLOTS: #{empty_slots}"
+p "FRAGMENTATION: #{ empty_slots / total_slots.to_f }"
+
+# png.save('heap.png', :interlace => true)

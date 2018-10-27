@@ -34,3 +34,11 @@ wsdirector features/broadcast.yml wss://simple-cable-app.herokuapp.com/cable -s 
 ```
 
 See `features/` folder for available scenarios.
+
+## Heap capturing
+
+- Run server with `DUMP=1`
+- Connect to a server passing `?dump=1` param (e.g. using [ACLI](https://github.com/palkan/acli): `acli -u "ws://localhost:8080/cable?dump"`) to dump the current `ObjectSpace` into a file (`heap.json`)
+- Run `ruby heapme.rb` to generate a `heap.png` (like the one below)
+
+![](./heap.png)
