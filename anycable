@@ -61,4 +61,6 @@ if ENV["OBJECT_TRACE"]
   end)
 end
 
+p "Anycable RPC #{Anycable::VERSION} (pid: #{Process.pid})"
+
 Anycable::Server.start
