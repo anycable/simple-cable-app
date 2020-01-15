@@ -15,7 +15,7 @@ require "action_view/railtie"
 require "action_cable/engine"
 
 require "redis"
-require "anycable-rails" if ENV['USE_ANYCABLE']
+require "anycable-rails"
 
 class TestApp < Rails::Application
   secrets.secret_token    = "secret_token"
@@ -44,6 +44,9 @@ module ApplicationCable
 
     def connect
       self.id = SecureRandom.uuid
+
+      p request.url
+      p request.params
 
       if request.params.key?("dump")
         p "Generating heap dump..."

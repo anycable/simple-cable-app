@@ -3,13 +3,20 @@
 
 source "https://rubygems.org"
 
-gem "rails", "~> 5.2"
-# gem "rails", github: "boazsegev/rails" for iodine
-# gem "iodine"
+gem "rails", "~> 6.0"
 gem "puma"
-gem "falcon"
 gem "redis"
 
-gem "anycable-rails", "~> 0.5.0"
+if File.directory?("../anycable")
+  gem "anycable", path: "../anycable"
+else
+  gem "anycable"
+end
+
+if File.directory?("../anycable-rails")
+  gem "anycable-rails", path: "../anycable-rails"
+else
+  gem "anycable-rails"
+end
 
 gem "pry-byebug"

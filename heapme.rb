@@ -1,3 +1,13 @@
+# frozen_string_literal: true
+
+require "bundler/inline"
+
+gemfile(true) do
+  source "https://rubygems.org"
+
+  gem "chunky_png"
+end
+
 require 'fiddle'
 
 SIZEOF_HEAP_PAGE_HEADER_STRUCT = Fiddle::SIZEOF_VOIDP
@@ -128,4 +138,4 @@ p "TOTAL LIVE SLOTS: #{live_slots}"
 p "TOTAL EMPTY SLOTS: #{empty_slots}"
 p "FRAGMENTATION: #{ empty_slots / total_slots.to_f }"
 
-# png.save('heap.png', :interlace => true)
+png.save('tmp/heap.png', :interlace => true)
