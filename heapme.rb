@@ -1,13 +1,5 @@
 # frozen_string_literal: true
 
-require "bundler/inline"
-
-gemfile(true) do
-  source "https://rubygems.org"
-
-  gem "chunky_png"
-end
-
 require 'fiddle'
 
 SIZEOF_HEAP_PAGE_HEADER_STRUCT = Fiddle::SIZEOF_VOIDP
@@ -23,8 +15,6 @@ HEAP_PAGE_OBJ_LIMIT     = (HEAP_PAGE_SIZE - SIZEOF_HEAP_PAGE_HEADER_STRUCT) / SI
 def page_address_from_object_address object_address
   object_address & ~HEAP_PAGE_ALIGN_MASK
 end
-
-p "HEAP PAGE SIZE LIMIT: #{HEAP_PAGE_OBJ_LIMIT}"
 
 class Page < Struct.new :address, :obj_start_address, :obj_count
   def initialize address, obj_start_address, obj_count
@@ -74,11 +64,36 @@ def page_info page_address
 end
 
 require 'json'
+require 'optparse'
+
+options = {png: true}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: ruby heapme.rb [options]"
+
+  opts.on("-i PATH", "--input PATH", "Input path (defaults to 'heap.json')") do |v|
+    options[:input] = v
+  end
+
+  opts.on("-o PATH", "--output PATH", "Custom output path") do |v|
+    options[:output] = v
+  end
+
+  opts.on("-w NUM", "--width NUM", Integer, "PNG width in pixels") do |v|
+    options[:width] = v
+  end
+
+  opts.on("--[no-]png", "[Do not] create PNG") do |v|
+    options[:png] = v
+  end
+end.parse!
 
 # Keep track of pages
 pages = {}
 
-heap_file = ARGV[0] || 'heap.json'
+heap_file = options[:input] || "heap.json"
+png_file = options[:output] || heap_file.sub(".json", ".png")
+png_width = options[:width]
 
 File.open(heap_file) do |f|
   f.each_line do |line|
@@ -100,19 +115,41 @@ File.open(heap_file) do |f|
   end
 end
 
-require 'chunky_png'
-
 pages = pages.values
 
-p "TOTAl PAGES: #{pages.size}"
+live_slots = pages.sum { |page| page.each_slot.sum { |slot| slot == :full ? 1 : 0 } }
 
-live_slots = 0
+total_pages = pages.size
+total_slots = pages.size * HEAP_PAGE_OBJ_LIMIT
+empty_slots =  total_slots - live_slots
+fragmentation = empty_slots / total_slots.to_f
+
+report = {
+  total_pages: total_pages,
+  total_live_slots: live_slots,
+  total_empty_slots: empty_slots,
+  fragmentation: fragmentation
+}
+
+puts JSON.pretty_generate(report)
+
+return unless options[:png]
+
+require 'bundler/inline'
+
+gemfile(true) do
+  source 'https://rubygems.org'
+
+  gem 'chunky_png'
+end
+
+require 'chunky_png'
 
 # We're using 2x2 pixel squares to represent objects, so the height of
 # the PNG will be 2x the max number of objects, and the width will be 2x the
 # number of pages
 height = HEAP_PAGE_OBJ_LIMIT * 2
-width = pages.size * 2
+width = options[:width] || total_pages * 2
 
 png = ChunkyPNG::Image.new(width, height, ChunkyPNG::Color::TRANSPARENT)
 
@@ -121,7 +158,6 @@ pages.each_with_index do |page, i|
 
   page.each_slot.with_index do |slot, j|
     if slot == :full
-      live_slots += 1
       j = j * 2
       png[i, j] = ChunkyPNG::Color.rgba(255, 0, 0, 255)
       png[i + 1, j] = ChunkyPNG::Color.rgba(255, 0, 0, 255)
@@ -131,11 +167,6 @@ pages.each_with_index do |page, i|
   end
 end
 
-total_slots = pages.size * HEAP_PAGE_OBJ_LIMIT
-empty_slots =  total_slots - live_slots
+png.save(png_file, :interlace => true)
 
-p "TOTAL LIVE SLOTS: #{live_slots}"
-p "TOTAL EMPTY SLOTS: #{empty_slots}"
-p "FRAGMENTATION: #{ empty_slots / total_slots.to_f }"
-
-png.save('tmp/heap.png', :interlace => true)
+puts "PNG: #{png_file}"
