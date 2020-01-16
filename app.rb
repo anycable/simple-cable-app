@@ -32,7 +32,7 @@ class TestApp < Rails::Application
   end
 end
 
-if ENV['DUMP']
+if ENV["DUMP"] == "1"
   require "objspace"
 
   ObjectSpace.trace_object_allocations_start
@@ -45,17 +45,26 @@ module ApplicationCable
     def connect
       self.id = SecureRandom.uuid
 
-      p request.url
-      p request.params
+      if request.params.key?("compact")
+        puts "Call GC.compact"
+        GC.compact
+      end
 
       if request.params.key?("dump")
-        p "Generating heap dump..."
+        puts "Generating heap dump..."
         GC.start;GC.start;GC.start
+        if request.params["dump"] =~ /\bcompact\b/ || request.params.key?("compact")
+          GC.compact
+        else
+          GC.start;GC.start;GC.start
+        end
 
-        File.open('heap.json', 'w') { |f|
+        path = "tmp/heap-#{request.params["dump"]}-#{Time.now.strftime("%Y-%m-%d-%H-%M-%S")}.json"
+
+        File.open(path, 'w') { |f|
           ObjectSpace.dump_all(output: f)
         }
-        p "Done!"
+        puts "Done! File: #{path}"
       end
     end
   end
@@ -93,7 +102,7 @@ class BenchmarkChannel < ApplicationCable::Channel
   end
 end
 
-if ENV["OBJECT_TRACE"]
+if ENV["OBJECT_TRACE"] == "1"
   require_relative "./memprof"
 
   WARMUP_COUNT = 200

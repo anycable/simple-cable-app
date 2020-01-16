@@ -51,8 +51,8 @@ Use [ACLI](https://github.com/palkan/acli) to connect to Action Cable server fro
 ## Heap capturing
 
 - Run server with `DUMP=1` (`DUMP=1 bundle exec puma -p 8080` or `DUMP=1 bundle exec anycable --server-command="anycable-go -p 8080"`)
-- Do some stress
-- Connect to a server passing `?dump=1` param (e.g., using ACLI: `acli -u "ws://localhost:8080/cable?dump"`) to dump the current `ObjectSpace` into a file (`heap.json`)
-- Run `ruby heapme.rb` to generate a `heap.png` (like the one below)
+- Do some stress (see `simulate.rb`)
+- Connect to a server passing `?dump=1` param (e.g., using ACLI: `acli -u "ws://localhost:8080/cable?dump"`) to dump the current `ObjectSpace` into a file (`tmp/heap.json`)
+- Run `ruby etc/heapme.rb tmp/heap.json` to generate a `heap.png` (like the one below)
 
 ![](./heap.png)

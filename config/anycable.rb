@@ -8,7 +8,7 @@ ActionCable.server.config.cable = { "adapter" => "any_cable" }
 
 Rails.application.initialize!
 
-if ENV["OBJECT_TRACE"]
+if ENV["OBJECT_TRACE"] == "1"
   require_relative "./memprof"
 
   ANYCABLE_SOURCES = /(anycable|grpc|protobuf)/
