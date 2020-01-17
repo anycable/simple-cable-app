@@ -1,0 +1,61 @@
+version: '2.4'
+
+x-env: &ruby_env
+  HISTFILE: /usr/local/bundle/.bash_history
+  LANG: C.UTF-8
+
+services:
+  ruby: &ruby
+    image: ruby:2.7
+    environment:
+      <<: *ruby_env
+      DUMP: ${DUMP:-0}
+      OBJECT_TRACE: ${OBJECT_TRACE:-0}
+      REDIS_URL: "redis://redis:6379"
+    command: bash
+    working_dir: /app
+    tmpfs:
+      - /tmp
+    volumes:
+      - ./:/app:cached
+      - bundler27:/usr/local/bundle
+      - ./.dockerdev/.bashrc:/root/.bashrc:ro
+      - ./.dockerdev/.pryrc:/root/.pryrc:ro
+  rails:
+    <<: *ruby
+    command: bundle exec puma -p 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  ruby-fs: &ruby-fs
+    <<: *ruby
+    build:
+      context: .
+      dockerfile: ./.dockerdev/fullstaq-ruby.dockerfile
+      args:
+        RUBY_VERSION: '2.7.0-jemalloc'
+    image: fullstaq-ruby-cable:1.0
+
+  rails-fs:
+    <<: *ruby-fs
+    command: bundle exec puma -p 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
+  anycable:
+    <<: *ruby
+    command: bundle exec anycable
+    ports:
+      - "50051:50051"
+
+  redis:
+    image: redis:4.0
+    ports:
+      - "6379:6379"
+
+volumes:
+  bundler27:

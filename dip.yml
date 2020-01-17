@@ -1,0 +1,25 @@
+version: '4.2'
+
+environment:
+  RAILS_ENV: development
+
+compose:
+  files:
+    - docker-compose.yml
+  project_name: anycable-sample-app
+
+interaction:
+  sh:
+    description: Open a Bash shell within a Rails container (with dependencies up)
+    service: ruby
+    command: /bin/bash
+
+  bundle:
+    description: Run Bundler commands
+    service: ruby
+    command: bundle
+
+provision:
+  - dip compose down --volumes
+  - dip up -d redis
+  - dip bundle install
