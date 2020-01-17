@@ -7,23 +7,34 @@
 #
 # See below for options.
 
+# Scenario to run
+SCENARIO = ENV.fetch("SCENARIO", "features/simulate.yml")
 # How much seconds wait before launching the next batch of clients within one step
 WAIT = ENV.fetch("WAIT", 5).to_i
 # How much seconds wait between wave
 STEP_WAIT = ENV.fetch("STEP_WAIT", 20).to_i
 # How many steps in one wave
 STEP_SIZE = ENV.fetch("STEP_SIZE", 5).to_i
+
+def parse_scale(scale)
+  return unless scale
+  scale.split(",").map(&:to_i)
+end
+
 # How much clients to run at each step
-SCALE = ENV.fetch("SCALE", 200).to_i
+SCALE = parse_scale(ENV["SCALE"]) || [200]
 # Total number of waves
 N = ENV.fetch("N", 5).to_i
 # whether to request GC compact before each step
 COMPACT = ENV["COMPACT"] == "1"
+# ID of the docker container to monitor memory usage
+DOCKER_ID = ENV["DOCKER"]
 
 def step(num)
   step_start = Time.now
 
   workers = []
+  scale = SCALE.size == 1 ? SCALE.first : SCALE.shift
 
   if COMPACT
     print "Requesting GC.compact..."
@@ -38,8 +49,8 @@ def step(num)
       start = Time.now
       retry_count = 0
       begin
-        puts "Run worker ##{id} (#{SCALE} connections). Attempt: #{retry_count + 1}"
-        IO.popen("wsdirector features/simulate.yml 'ws://localhost:8080/cable' -s #{SCALE}", err: [:child, :out]) do |io|
+        puts "Run worker ##{id} (#{scale} connections). Attempt: #{retry_count + 1}"
+        IO.popen("wsdirector #{SCENARIO} 'ws://localhost:8080/cable' -s #{scale}", err: [:child, :out]) do |io|
           raise "Worker failed due to broker pipe" if io.read.include?("Broken pipe")
         end
       rescue => err
@@ -57,9 +68,44 @@ def step(num)
 
   workers.map(&:join)
   puts "Step #{num} finished in #{Time.now - step_start}s. Wait for #{STEP_WAIT}s"
-  sleep STEP_WAIT
+  sleep STEP_WAIT unless num == N
 end
+
+def monitor_docker(id)
+  report = {stopped: false, data: []}
+  Thread.new do
+    IO.popen("docker stats #{id} --format='{{.MemUsage}}' 2> /dev/null") do |io|
+      while line = io.gets
+        break if report[:stopped]
+        report[:data] << line.match(/([\.\d]+)MiB/)[1].to_f
+      end
+    end
+  end
+  report
+end
+
+mem_report =
+  if DOCKER_ID
+    monitor_docker(DOCKER_ID)
+  end
 
 N.times { |i| step(i + 1) }
 
 puts "Finished."
+
+return unless mem_report
+
+mem_report[:stopped] = true
+
+require 'bundler/inline'
+
+gemfile(true) do
+  source 'https://rubygems.org'
+
+  gem 'unicode_plot'
+end
+
+require 'unicode_plot'
+
+plot = UnicodePlot.lineplot(mem_report[:data], name: "MiB", width: 100, height: 20, color: :red)
+plot.render

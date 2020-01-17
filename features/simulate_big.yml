@@ -1,0 +1,103 @@
+- client:
+    x-message: &message
+      message: >
+        Just as a recap, Ruby objects are fixed width. That is, every Ruby object is the same size: 40 bytes.
+        Objects are not really allocated with malloc, but instead they are placed inside of pages.
+    multiplier: ":scale"
+    protocol: "action_cable"
+    actions:
+      - subscribe:
+          channel: "BenchmarkChannel"
+      - wait_all
+      - sleep:
+          time: 5
+          shift: 2
+          debug: true
+      - debug:
+          message: "Perform #1"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            <<: *message
+      - receive_all:
+          messages:
+            - data:
+                <<: *message
+                action: "broadcast"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                <<: *message
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 3
+          shift: 2
+          debug: true
+      - debug:
+          message: "Perform #2"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            <<: *message
+      - receive_all:
+          messages:
+            - data:
+                <<: *message
+                action: "broadcast"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                <<: *message
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 4
+          shift: 1
+          debug: true
+      - debug:
+          message: "Perform #3"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            <<: *message
+      - receive_all:
+          messages:
+            - data:
+                <<: *message
+                action: "broadcast"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                <<: *message
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
+      - sleep:
+          time: 3
+          shift: 1
+          debug: true
+      - debug:
+          message: "Perform #4"
+      - perform:
+          channel: "BenchmarkChannel"
+          action: "broadcast"
+          data:
+            <<: *message
+      - receive_all:
+          messages:
+            - data:
+                <<: *message
+                action: "broadcast"
+              multiplier: ":scale"
+              channel: "BenchmarkChannel"
+            - data:
+                <<: *message
+                action: "broadcastResult"
+              multiplier: 1
+              channel: "BenchmarkChannel"
