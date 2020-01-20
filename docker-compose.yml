@@ -48,7 +48,7 @@ services:
 
   anycable:
     <<: *ruby
-    command: bundle exec anycable
+    command: bundle exec anycable -r ./anycable.rb
     ports:
       - "50051:50051"
 

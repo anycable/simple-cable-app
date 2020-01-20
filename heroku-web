@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$ANYCABLE_DEPLOYMENT" == "true" ]; then
-  bundle exec anycable
+  bundle exec anycable -r ./anycable.rb
 else
   bundle exec puma -e production -p $PORT
 fi
