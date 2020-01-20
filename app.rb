@@ -75,7 +75,12 @@ module ApplicationCable
   end
 end
 
-Rails.logger = ActionCable.server.config.logger = Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
+Rails.logger = ActionCable.server.config.logger =
+  if ENV["LOG"] == "1"
+    Logger.new(STDOUT)
+  else
+    Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
+  end
 ActionCable.server.config.cable = { "adapter" => "redis" }
 ActionCable.server.config.connection_class = -> { ApplicationCable::Connection }
 ActionCable.server.config.disable_request_forgery_protection = true
