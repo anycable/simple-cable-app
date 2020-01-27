@@ -48,6 +48,23 @@ services:
     depends_on:
       - redis
 
+  ruby-fs-trim: &ruby-fs-trim
+    <<: *ruby
+    build:
+      context: .
+      dockerfile: ./.dockerdev/fullstaq-ruby.dockerfile
+      args:
+        RUBY_VERSION: '2.7.0-malloctrim'
+    image: fullstaq-ruby-trim-cable:1.0
+
+  rails-fs-trim:
+    <<: *ruby-fs-trim
+    command: bundle exec puma -p 8080 -w ${WORKERS:-2}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+
   anycable:
     <<: *ruby
     command: bundle exec anycable -r ./anycable.rb
