@@ -2,7 +2,7 @@
 
 ENV['RAILS_ENV'] ||= 'production'
 
-require_relative "../app"
+require_relative "app"
 
 ActionCable.server.config.cable = { "adapter" => "any_cable" }
 

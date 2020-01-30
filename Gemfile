@@ -8,7 +8,9 @@ gem "puma"
 gem "redis"
 
 # Install from source for Ruby 2.7 (no precompiled binaries available yet)
-gem "google-protobuf", git: "https://github.com/google/protobuf"
+if RUBY_VERSION =~ /2\.7/
+  gem "google-protobuf", git: "https://github.com/google/protobuf"
+end
 
 if File.directory?("../anycable")
   gem "anycable", path: "../anycable"

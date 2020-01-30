@@ -77,7 +77,7 @@ end
 
 Rails.logger = ActionCable.server.config.logger =
   if ENV["LOG"] == "1"
-    Logger.new(STDOUT)
+    Logger.new(STDOUT).tap { |logger| logger.level = ENV.fetch("LOG_LEVEL", "debug").to_sym }
   else
     Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
   end
