@@ -3,5 +3,5 @@
 if [ "$ANYCABLE_DEPLOYMENT" == "true" ]; then
   bundle exec anycable --server-command="anycable-go" -r ./anycable.rb
 else
-  bundle exec puma -e production -p $PORT
+  bundle exec puma -e production -p $PORT -w $WEB_CONCURRENCY
 fi
