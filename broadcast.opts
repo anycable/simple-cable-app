@@ -1,8 +1,8 @@
-ws://0.0.0.0:8080/cable
+wss://simple-cable-app.herokuapp.com:443/cable
 --concurrent 8
---sample-size 100
---step-size 1000
+--sample-size 200
+--step-size 500
 --payload-padding 200
---total-steps 5
+--total-steps 6
 --origin http://0.0.0.0
 --server-type=actioncable
