@@ -12,3 +12,6 @@ gem "redis"
 gem "anycable-rails", "~> 0.6"
 
 gem "pry-byebug"
+
+gem "samovar"
+gem "process-metrics", "~> 0.2.0"

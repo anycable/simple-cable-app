@@ -101,3 +101,6 @@
                 action: "broadcastResult"
               multiplier: 1
               channel: "BenchmarkChannel"
+      - sleep:
+          time: 60
+          debug: true
