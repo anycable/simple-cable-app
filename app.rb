@@ -22,8 +22,10 @@ class TestApp < Rails::Application
   secrets.secret_key_base = "secret_key_base"
 
   config.logger = Logger.new($stdout)
-  config.log_level = :info
+  config.log_level = ENV.fetch("LOG_LEVEL", "info").to_sym
   config.eager_load = true
+
+  config.filter_parameters << :token
 
   initializer "routes" do
     Rails.application.routes.draw do
