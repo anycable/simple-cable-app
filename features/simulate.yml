@@ -1,99 +1,69 @@
 - client:
-    multiplier: ":scale"
+    x-message: &message
+      message: <%= ENV.fetch("MESSAGE", "Hello!") %>
+    x-channel: &channel
+      channel: "BenchmarkChannel"
+      params:
+        id: <%= ENV["TEST_ID"] %>
+    x-broadcast: &broadcast
+      <<: *channel
+      action: "broadcast"
+      data:
+        <<: *message
+    x-receive: &receive
+      data:
+        action: "broadcast"
+        <<: *message
+    x-result: &result
+      data:
+        action: "broadcastResult"
+        <<: *message
+    multiplier: <%= ENV["SAMPLE"] || '::scale / 2' %>
     protocol: "action_cable"
+    name: "publishers"
     actions:
       - subscribe:
-          channel: "BenchmarkChannel"
+          <<: *channel
+      - wait_all
+      - perform:
+          <<: *broadcast
+      - receive_all:
+          messages:
+            - multiplier: <%= ENV["SAMPLE"] || '::scale / 2' %>
+              <<: *channel
+              <<: *receive
+            - multiplier: 1
+              <<: *channel
+              <<: *result
       - wait_all
       - sleep:
           time: 5
           shift: 2
-          debug: true
-      - debug:
-          message: "Perform #1"
       - perform:
-          channel: "BenchmarkChannel"
-          action: "broadcast"
-          data:
-            message: "Hello!"
+          <<: *broadcast
       - receive_all:
           messages:
-            - data:
-                action: "broadcast"
-                message: "Hello!"
-              multiplier: ":scale"
-              channel: "BenchmarkChannel"
-            - data:
-                message: "Hello!"
-                action: "broadcastResult"
-              multiplier: 1
-              channel: "BenchmarkChannel"
-      - sleep:
-          time: 3
-          shift: 2
-          debug: true
-      - debug:
-          message: "Perform #2"
-      - perform:
-          channel: "BenchmarkChannel"
-          action: "broadcast"
-          data:
-            message: "Hello!"
-      - receive_all:
-          messages:
-            - data:
-                action: "broadcast"
-                message: "Hello!"
-              multiplier: ":scale"
-              channel: "BenchmarkChannel"
-            - data:
-                message: "Hello!"
-                action: "broadcastResult"
-              multiplier: 1
-              channel: "BenchmarkChannel"
-      - sleep:
-          time: 4
-          shift: 1
-          debug: true
-      - debug:
-          message: "Perform #3"
-      - perform:
-          channel: "BenchmarkChannel"
-          action: "broadcast"
-          data:
-            message: "Hello!"
-      - receive_all:
-          messages:
-            - data:
-                action: "broadcast"
-                message: "Hello!"
-              multiplier: ":scale"
-              channel: "BenchmarkChannel"
-            - data:
-                message: "Hello!"
-                action: "broadcastResult"
-              multiplier: 1
-              channel: "BenchmarkChannel"
-      - sleep:
-          time: 3
-          shift: 1
-          debug: true
-      - debug:
-          message: "Perform #4"
-      - perform:
-          channel: "BenchmarkChannel"
-          action: "broadcast"
-          data:
-            message: "Hello!"
-      - receive_all:
-          messages:
-            - data:
-                action: "broadcast"
-                message: "Hello!"
-              multiplier: ":scale"
-              channel: "BenchmarkChannel"
-            - data:
-                message: "Hello!"
-                action: "broadcastResult"
-              multiplier: 1
-              channel: "BenchmarkChannel"
+            - multiplier: <%= ENV["SAMPLE"] || '::scale / 2' %>
+              <<: *channel
+              <<: *receive
+            - multiplier: 1
+              <<: *channel
+              <<: *result
+
+- client:
+    multiplier: ":scale"
+    name: "listeners"
+    protocol: "action_cable"
+    actions:
+      - subscribe:
+          <<: *channel
+      - wait_all
+      - receive:
+          multiplier: <%= ENV["SAMPLE"] || '::scale / 2' %>
+          <<: *channel
+          <<: *receive
+      - wait_all
+      - receive:
+          multiplier: <%= ENV["SAMPLE"] || '::scale / 2' %>
+          <<: *channel
+          <<: *receive

@@ -23,7 +23,7 @@
                 message: "Hello!"
                 action: "broadcastResult"
               multiplier: 3
-              channel: "BenchmarkChannel"          
+              channel: "BenchmarkChannel"
 - client:
     multiplier: ":scale * 2"
     name: "listeners"

@@ -48,8 +48,9 @@ module ApplicationCable
       self.id = SecureRandom.uuid
 
       if request.params.key?("compact")
-        puts "Call GC.compact"
+        ts = Time.now
         GC.compact
+        puts "GC.compact (#{Time.now - ts}s)"
       end
 
       if request.params.key?("dump")
@@ -95,7 +96,7 @@ end
 
 class BenchmarkChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "all"
+    stream_from "all#{stream_id}"
   end
 
   def echo(data)
@@ -103,9 +104,15 @@ class BenchmarkChannel < ApplicationCable::Channel
   end
 
   def broadcast(data)
-    ActionCable.server.broadcast "all", data
+    ActionCable.server.broadcast "all#{stream_id}", data
     data["action"] = "broadcastResult"
     transmit data
+  end
+
+  private
+
+  def stream_id
+    params[:id] || ""
   end
 end
 

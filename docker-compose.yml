@@ -7,11 +7,11 @@ x-env: &ruby_env
   DUMP: ${DUMP:-0}
   OBJECT_TRACE: ${OBJECT_TRACE:-0}
   LOG: ${LOG:-0}
-  LOG_LEVEL: ${LOG:-debug}
+  LOG_LEVEL: ${LOG_LEVEL:-debug}
 
 services:
   ruby: &ruby
-    image: ruby:2.7
+    image: ruby:2.7.1
     environment:
       <<: *ruby_env
       REDIS_URL: "redis://redis:6379"
@@ -38,8 +38,8 @@ services:
       context: .
       dockerfile: ./.dockerdev/fullstaq-ruby.dockerfile
       args:
-        RUBY_VERSION: '2.7.0-jemalloc'
-    image: fullstaq-ruby-cable:1.0
+        RUBY_VERSION: '2.7.1-jemalloc'
+    image: fullstaq-ruby-cable:1.1
 
   rails-fs:
     <<: *ruby-fs
@@ -55,8 +55,8 @@ services:
       context: .
       dockerfile: ./.dockerdev/fullstaq-ruby.dockerfile
       args:
-        RUBY_VERSION: '2.7.0-malloctrim'
-    image: fullstaq-ruby-trim-cable:1.0
+        RUBY_VERSION: '2.7.1-malloctrim'
+    image: fullstaq-ruby-trim-cable:1.1
 
   rails-fs-trim:
     <<: *ruby-fs-trim

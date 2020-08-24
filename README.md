@@ -42,7 +42,7 @@ Use [websocket-bench](https://github.com/anycable/websocket-bench) for stress te
 For example, to run `broadcast` scenario you use the predefined options:
 
 ```ruby
-$ cat broadcast.opts | xargs websocket-bench broadcast
+cat benchmarks/broadcast.opts | xargs websocket-bench broadcast
 ...
 ```
 
@@ -51,7 +51,7 @@ Use [ACLI](https://github.com/palkan/acli) to connect to Action Cable server fro
 ## Heap capturing
 
 - Run server with `DUMP=1` (`DUMP=1 bundle exec puma -p 8080` or `DUMP=1 bundle exec anycable --server-command="anycable-go -p 8080"`)
-- Do some stress (see `simulate.rb`)
+- Do some stress (see `benchmarks/simulate.rb`)
 - Connect to a server passing `?dump=1` param (e.g., using ACLI: `acli -u "ws://localhost:8080/cable?dump"`) to dump the current `ObjectSpace` into a file (`tmp/heap.json`)
 - Run `ruby etc/heapme.rb tmp/heap.json` to generate a `heap.png` (like the one below)
 
