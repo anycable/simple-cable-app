@@ -11,6 +11,12 @@ DOCKER_ID = ENV["MONITOR_DOCKER_ID"] || ARGV[0]
 
 return unless DOCKER_ID
 
+REPORT_NAME = ENV["REPORT"]
+
+def log(msg)
+  puts "[#{Time.now}]\t#{msg}"
+end
+
 # Only use bundler/inline if gem is not installed yet
 begin
   require "unicode_plot"
@@ -50,16 +56,40 @@ module DockerMonitor
       stats << slice.max
     end
 
-    puts "\n📊 Memory snapshots: #{stats.join("\t")}\n"
+    log "\n📊 Memory snapshots: #{stats.join("\t")}\n"
   end
 
   def render_chart(data)
-    plot = UnicodePlot.lineplot(data, name: "MiB", width: [data.size, 100].min, height: 20, color: :red)
+    stats = []
+
+    # Print 10 values
+    data.each_slice((data.size / 1_000) + 1) do |slice|
+      stats << slice.max
+    end
+
+    plot = UnicodePlot.lineplot(stats, name: "MiB", width: [stats.size, 100].min, height: 20, color: :red)
     plot.render
+  end
+
+  def dump(data)
+    require 'fileutils'
+
+    Dir.chdir(File.join(__dir__, "..")) do
+      FileUtils.mkdir("tmp") unless File.directory?("tmp")
+
+      filename = ["tmp/#{Time.now.to_s.gsub(/\D/, '')}", REPORT_NAME, "mem.txt"].compact.join("_")
+
+      log "Raw data is dumped to #{filename}"
+
+      File.write(
+        filename,
+        data.map(&:to_s).join("\n")
+      )
+    end
   end
 end
 
-puts "📈  Monitoring Docker container: #{DOCKER_ID}"
+log "📈  Monitoring Docker container: #{DOCKER_ID}"
 
 mem_report = DockerMonitor.monitor_docker(DOCKER_ID)
 
@@ -70,5 +100,7 @@ $stdin.gets
 mem_report[:stopped] = true
 
 DockerMonitor.print_report(mem_report[:data])
+
+DockerMonitor.dump(mem_report[:data])
 
 DockerMonitor.render_chart(mem_report[:data])
