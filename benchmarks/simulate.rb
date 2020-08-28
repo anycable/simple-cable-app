@@ -7,6 +7,7 @@
 #
 # See below for options.
 
+HOST = ENV.fetch("HOST", "localhost")
 # Scenario to run
 SCENARIO = ENV.fetch("SCENARIO", "features/simulate.yml")
 # How much seconds to wait before launching the next wave of clients

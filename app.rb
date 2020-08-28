@@ -26,6 +26,7 @@ class TestApp < Rails::Application
   config.eager_load = true
 
   config.filter_parameters << :token
+  config.hosts = []
 
   initializer "routes" do
     Rails.application.routes.draw do
