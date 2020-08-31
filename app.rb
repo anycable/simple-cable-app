@@ -14,9 +14,6 @@ require "action_controller/railtie"
 require "action_view/railtie"
 require "action_cable/engine"
 
-require "redis"
-require "anycable-rails"
-
 class TestApp < Rails::Application
   secrets.secret_token    = "secret_token"
   secrets.secret_key_base = "secret_key_base"
@@ -85,7 +82,7 @@ Rails.logger = ActionCable.server.config.logger =
   else
     Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
   end
-ActionCable.server.config.cable = { "adapter" => "redis" }
+ActionCable.server.config.cable = { "adapter" => "async" }
 ActionCable.server.config.connection_class = -> { ApplicationCable::Connection }
 ActionCable.server.config.disable_request_forgery_protection = true
 
