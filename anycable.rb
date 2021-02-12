@@ -8,6 +8,9 @@ ActionCable.server.config.cable = { "adapter" => "any_cable" }
 
 Rails.application.initialize!
 
+Process.setproctitle("anycable")
+puts "AnyCable started (pid: #{Process.pid})\n"
+
 if ENV["OBJECT_TRACE"] == "1"
   require_relative "./memprof"
 

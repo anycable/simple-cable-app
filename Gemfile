@@ -9,9 +9,9 @@ gem "rails", "~> 6.0"
 gem "puma"
 gem "redis"
 
-gem "anycable-rails", "~> 0.6"
+gem "anycable-rails", "~> 1.0"
 
 gem "pry-byebug"
 
 gem "samovar"
-gem "process-metrics", "~> 0.2.0"
+gem "process-metrics"
