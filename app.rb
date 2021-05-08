@@ -18,6 +18,8 @@ require "action_cable/engine"
 require "redis"
 require "anycable-rails"
 
+require "rack/cors"
+
 class TestApp < Rails::Application
   secrets.secret_token    = "secret_token"
   secrets.secret_key_base = "secret_key_base"
@@ -28,10 +30,18 @@ class TestApp < Rails::Application
 
   config.filter_parameters << :token
   config.hosts = []
+  config.consider_all_requests_local = true
 
-  initializer "routes" do
-    Rails.application.routes.draw do
-      mount ActionCable.server => "/cable"
+  routes.append do
+    mount ActionCable.server => "/cable"
+
+    post "/graphql", to: "graphql#execute"
+  end
+
+  config.middleware.insert_before 0, Rack::Cors do
+    allow do
+      origins '*'
+      resource '*', headers: :any, methods: [:get, :post, :patch, :put]
     end
   end
 end
@@ -40,6 +50,9 @@ if ENV["DUMP"] == "1"
   require "objspace"
 
   ObjectSpace.trace_object_allocations_start
+end
+
+class ApplicationController < ActionController::API
 end
 
 module ApplicationCable
@@ -86,7 +99,7 @@ Rails.logger = ActionCable.server.config.logger =
   else
     Logger.new(IO::NULL).tap { |logger| logger.level = :fatal }
   end
-ActionCable.server.config.cable = { "adapter" => "redis" }
+ActionCable.server.config.cable = { "adapter" => ENV.fetch("CABLE_ADAPTER", "redis") }
 ActionCable.server.config.connection_class = -> { ApplicationCable::Connection }
 ActionCable.server.config.disable_request_forgery_protection = true
 
@@ -155,3 +168,5 @@ if ENV["OBJECT_TRACE"] == "1"
     end
   end)
 end
+
+require_relative "./graphql"
