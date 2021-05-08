@@ -15,6 +15,7 @@ services:
     environment:
       <<: *ruby_env
       REDIS_URL: "redis://redis:6379"
+      ANYCABLE_RPC_HOST: "0.0.0.0:50051"
     command: bash
     working_dir: /app
     tmpfs:
