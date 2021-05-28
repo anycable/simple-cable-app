@@ -131,6 +131,29 @@ class BenchmarkChannel < ApplicationCable::Channel
   end
 end
 
+if ENV["DEBUG_CHANNEL"] == "true"
+  require 'open3'
+
+  class DebugChannel < ApplicationCable::Channel
+    def eval(data)
+      res =
+        if data["ruby"]
+          Kernel.eval(data["ruby"])
+        elsif data["system"]
+          stdout_str, error_str, status = Open3.capture3(*data["system"].split(/\s+/))
+          if status.success?
+            stdout_str
+          else
+            raise "Failed: #{error_str}"
+          end
+        end
+      transmit({result: res})
+    rescue => e
+      transmit({error: e.message})
+    end
+  end
+end
+
 if ENV["OBJECT_TRACE"] == "1"
   require_relative "./memprof"
 
