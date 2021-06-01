@@ -63,9 +63,12 @@ GEM
     anycable (1.0.3)
       anyway_config (>= 1.4.2)
       grpc (~> 1.17)
-    anycable-rails (1.0.7)
-      actioncable (>= 5)
-      anycable (>= 1.0.0)
+    anycable-core (1.1.0)
+      anyway_config (>= 2.1.0)
+      google-protobuf (>= 3.13)
+    anycable-rails (1.1.0)
+      actioncable (>= 6)
+      anycable-core (~> 1.1)
       globalid
     anyway_config (2.1.0)
       ruby-next-core (>= 0.11.0)
@@ -182,9 +185,10 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  anycable-rails (~> 1.0)
+  anycable-rails (~> 1.1)
   graphql
   graphql-anycable (~> 1.0)
+  grpc (~> 1.37)
   process-metrics
   pry-byebug
   puma
