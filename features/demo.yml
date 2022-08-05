@@ -4,3 +4,23 @@
     actions:
       - subscribe:
           channel: "DemoChannel"
+      - perform:
+          channel: "DemoChannel"
+          action: broadcast
+      - receive:
+          channel: "DemoChannel"
+          data: "hello"
+      - unsubscribe:
+          channel: "DemoChannel"
+      # - sleep:
+          # time: 1
+      # - subscribe:
+          # channel: "DemoChannel"
+      - perform:
+          channel: "DemoChannel"
+          action: broadcast
+      - receive:
+          channel: "DemoChannel"
+          data: "hello"
+      - sleep:
+          time: 6

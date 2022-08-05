@@ -107,6 +107,14 @@ class DemoChannel < ApplicationCable::Channel
   def subscribed
     stream_from "demo"
   end
+
+  def broadcast
+    ActionCable.server.broadcast "demo", "hello"
+  end
+
+  def unsubscribed
+    sleep 1
+  end
 end
 
 class BenchmarkChannel < ApplicationCable::Channel

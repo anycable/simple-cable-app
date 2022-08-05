@@ -13,9 +13,9 @@ id = rand(100)
 require "jwt"
 require "json"
 
-SECRET = ENV["ANYCABLE_JWT_SECRET"]
+SECRET = ENV["ANYCABLE_JWT_SECRET"] || "secret"
 
-exp = Time.now.to_i + 30
+exp = Time.now.to_i + 360
 payload = {ext: {id: id}.to_json, exp: exp}
 
 puts JWT.encode payload, SECRET, "HS256"

@@ -8,9 +8,9 @@
           channel: "BenchmarkChannel"
           action: "echo"
           data:
-            message: "Echo-cho-ho!"
+            message: '<%= "a" * ENV.fetch("N", 2).to_i %>'
       - receive:
           channel: "BenchmarkChannel"
           data:
-            message: "Echo-cho-ho!"
+            message: '<%= "a" * ENV.fetch("N", 2).to_i %>'
             action: "echo"
